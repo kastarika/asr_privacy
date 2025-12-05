@@ -249,6 +249,11 @@ def compute_quality_loss(reference, degraded):
     Returns:
         Quality loss tensor in [0, 1]
     """
+    # Match lengths (EnCodec can change audio length slightly)
+    min_length = min(reference.shape[-1], degraded.shape[-1])
+    reference = reference[..., :min_length]
+    degraded = degraded[..., :min_length]
+
     # L1 loss in time domain
     time_loss = torch.nn.functional.l1_loss(degraded, reference)
 

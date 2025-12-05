@@ -3,6 +3,7 @@ Demo script to load audio from test.clean, apply perturbations, and evaluate ASR
 Uses the same dataloader and settings as the training script.
 """
 import os
+import time
 from datetime import datetime
 import torch
 import torchaudio
@@ -119,6 +120,13 @@ def main():
     print("\n=== Applying Perturbations ===")
     perturbation_layer.eval()
 
+    # Calculate audio duration for real-time metrics
+    audio_duration_seconds = args.audio_length / args.sample_rate
+    print(f"Audio duration: {audio_duration_seconds:.2f} seconds ({audio_duration_seconds*1000:.0f} ms)")
+
+    # Start timing the processing
+    start_time = time.time()
+
     with torch.no_grad():
         # Apply perturbations (returns perturbed audio, raw params, smoothed params)
         perturbed_audio_before_codec, raw_params, smoothed_params = perturbation_layer(audio_batch)
@@ -135,6 +143,27 @@ def main():
         # Apply EnCodec encode-decode (same as training pipeline)
         print("\n=== Applying EnCodec encode-decode ===")
         perturbed_audio = encodec.encode_decode(perturbed_audio_before_codec)
+
+    # End timing and calculate metrics
+    end_time = time.time()
+    processing_time = end_time - start_time
+
+    # Calculate real-time factor and delay
+    real_time_factor = processing_time / audio_duration_seconds
+    real_time_delay = processing_time - audio_duration_seconds
+
+    print(f"\n=== Processing Time Metrics ===")
+    print(f"Total processing time: {processing_time:.4f} seconds ({processing_time*1000:.2f} ms)")
+    print(f"Audio duration: {audio_duration_seconds:.4f} seconds ({audio_duration_seconds*1000:.2f} ms)")
+    print(f"Real-time factor (RTF): {real_time_factor:.4f}x")
+    if real_time_delay > 0:
+        print(f"Real-time delay: {real_time_delay:.4f} seconds ({real_time_delay*1000:.2f} ms)")
+        print(f"  → Processing is {real_time_factor:.2f}x slower than real-time")
+        print(f"  → Would accumulate {real_time_delay:.2f}s delay if audio played in real-time")
+    else:
+        print(f"Real-time delay: 0 seconds (processing faster than real-time)")
+        print(f"  → Processing is {1/real_time_factor:.2f}x faster than real-time")
+        print(f"  → No delay would occur if audio played in real-time")
 
     # Move back to CPU for saving
     perturbed_audio_cpu = perturbed_audio.cpu()
@@ -202,6 +231,11 @@ def main():
     print(f"  Model checkpoint: {args.model_path if args.model_path else 'Random initialization'}")
     print(f"\nSample ID: {sample_id}")
     print(f"Ground truth: {text}")
+    print(f"\nProcessing Performance:")
+    print(f"  Audio duration: {audio_duration_seconds:.4f}s")
+    print(f"  Processing time: {processing_time:.4f}s")
+    print(f"  Real-time factor: {real_time_factor:.4f}x")
+    print(f"  Real-time delay: {max(0, real_time_delay):.4f}s")
     print(f"\nOriginal:")
     print(f"  Transcription: {original_transcription}")
     print(f"  WER: {original_wer:.4f} ({original_wer*100:.2f}%)")
@@ -234,6 +268,13 @@ def main():
         },
         'sample_id': sample_id,
         'ground_truth': text,
+        'processing_performance': {
+            'audio_duration_seconds': float(audio_duration_seconds),
+            'processing_time_seconds': float(processing_time),
+            'real_time_factor': float(real_time_factor),
+            'real_time_delay_seconds': float(max(0, real_time_delay)),
+            'faster_than_realtime': real_time_factor < 1.0
+        },
         'original': {
             'transcription': original_transcription,
             'wer': original_wer,
