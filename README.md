@@ -123,3 +123,33 @@ graph TD
     
     Infer -->|GENERATED| Telemetry
 ```
+
+
+
+graph TD
+    %% Node Styling
+    classDef entity fill:#eceff1,stroke:#607d8b,stroke-width:2px,color:#000;
+    classDef hyperedge fill:#ff9800,stroke:#e65100,stroke-width:4px,color:#fff;
+
+    %% The Nodes (Vertices)
+    Alice([Agent: Dev_Alice]):::entity
+    Data[(Entity: AirSim_Dataset)]:::entity
+    Code[Entity: airsim_env.py]:::entity
+    GPU[Agent: A100 GPU]:::entity
+    
+    %% The Hyperedge (Transaction Hub)
+    HE_Train{Hyperedge: Training_Transaction_1}:::hyperedge
+
+    %% The Outputs (Vertices)
+    Model((Artifact: best_model.zip)):::entity
+    Log((Artifact: TensorBoard_Log)):::entity
+
+    %% Hyperedge Input Connections (The Joint State)
+    Alice --- HE_Train
+    Data --- HE_Train
+    Code --- HE_Train
+    GPU --- HE_Train
+    
+    %% Hyperedge Output Connections (The Result)
+    HE_Train ===> Model
+    HE_Train ===> Log
