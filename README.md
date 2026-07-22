@@ -154,3 +154,55 @@ graph TD
     HE_Train ===> Model
     HE_Train ===> Log
 ```
+
+
+```mermaid
+graph TD
+    %% Node Styling
+    classDef entity fill:#eceff1,stroke:#607d8b,stroke-width:2px,color:#000;
+    classDef hyperedge fill:#ff9800,stroke:#e65100,stroke-width:4px,color:#fff;
+    classDef anomaly fill:#ef5350,stroke:#b71c1c,stroke-width:2px,color:#fff;
+
+    %% --- CONSTANT INPUTS ---
+    Data[(multi_rgb Dataset)]:::entity
+    GPU[A100 GPU]:::entity
+    Alice([Dev_Alice]):::entity
+
+    %% --- TIME T0: CLEAN BASELINE ---
+    CodeV1[airsim_env.py v1]:::entity
+    HE_Train1{Hyperedge: Training 1}:::hyperedge
+    ModelV1((Model v1 - Clean)):::entity
+    
+    Data --- HE_Train1
+    GPU --- HE_Train1
+    CodeV1 --- HE_Train1
+    HE_Train1 ===> ModelV1
+
+    %% --- TIME T1: MODIFICATION & ADDITION ---
+    CodeV2[airsim_env.py v2 - PGD Injected]:::anomaly
+    NewConfig[weather_config.yml]:::entity
+    HE_Train2{Hyperedge: Training 2}:::hyperedge
+    ModelV2((Model v2 - Poisoned)):::anomaly
+    
+    %% The new transaction pulls unchanged data + new data
+    Data --- HE_Train2
+    GPU --- HE_Train2
+    Alice --- HE_Train2
+    CodeV2 --- HE_Train2
+    NewConfig --- HE_Train2
+    
+    HE_Train2 ===> ModelV2
+
+    %% --- TIME T2: EVALUATION AND BACKTRACK ---
+    HE_Eval{Hyperedge: Evaluation}:::hyperedge
+    CrashLog((Evaluation Log: CRASH)):::anomaly
+
+    ModelV2 --- HE_Eval
+    HE_Eval ===> CrashLog
+
+    %% Backtracking Path (Invisible links for layout)
+    CrashLog -.-> |1. Fan-In| HE_Eval
+    HE_Eval -.-> |2. Fan-Out| ModelV2
+    ModelV2 -.-> |3. Fan-In| HE_Train2
+    HE_Train2 -.-> |4. Fan-Out| CodeV2
+```
