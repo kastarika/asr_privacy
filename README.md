@@ -1,3 +1,12 @@
+# AirSim RL Provenance Tracking System
+
+Welcome to the AirSim RL Provenance Tracking project. This repository contains the code, models, and environments for training a drone to navigate complex geometries using Proximal Policy Optimization (PPO) in AirSim, alongside a robust provenance graph system for tracking hardware, code, and model dependencies.
+
+## Architecture & Provenance Graph
+
+The following Directed Acyclic Graph (DAG) illustrates the provenance tracking of our system. It tracks the exact lineage of code commits, training processes, and hardware execution environments to assist with root-cause analysis. For instance, you can use this to trace a simulated drone failure directly back to a specific code merge or hardware execution state.
+
+```mermaid
 graph TD
     %% Define Node Styling and Colors
     classDef actor fill:#ffcdd2,stroke:#b71c1c,stroke-width:2px,color:#000;
@@ -48,3 +57,4 @@ graph TD
     Model -->|USED| Infer
     Infer -->|EXECUTED_ON| CPU
     Infer -->|WAS_GENERATED_BY| Telemetry
+```
