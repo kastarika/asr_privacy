@@ -125,7 +125,7 @@ graph TD
 ```
 
 
-
+```mermaid
 graph TD
     %% Node Styling
     classDef entity fill:#eceff1,stroke:#607d8b,stroke-width:2px,color:#000;
@@ -153,3 +153,4 @@ graph TD
     %% Hyperedge Output Connections (The Result)
     HE_Train ===> Model
     HE_Train ===> Log
+```
